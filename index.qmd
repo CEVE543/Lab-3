@@ -42,9 +42,32 @@ code-line-numbers: false
 code-block-font-size: "0.85em"
 ---
 
-## Topics
+## Objectives
 
-- GEV parameter estimation with Turing.jl
-- Benchmark with Extremes.jl
-- Confidence intervals for return levels
+1. Implement GEV parameter estimation using Turing.jl
+1. Compare results with traditional methods using Extremes.jl
+1. Calculate confidence intervals for return levels
+
+## Before
+
+::: {.callout-important}
+## Instructions
+
+Do this before the lab date so that lab itself can go more smoothly.
+:::
+
+## Background and Reading
+
+<!-- Content will be added here -->
+
+## Tasks
+
+Modify the code section below to address the following tasks.
+
+1. Set up GEV parameter estimation model in Turing.jl
+1. Implement traditional GEV fitting using Extremes.jl for comparison
+1. Calculate and visualize confidence intervals for return levels
+1. Compare Bayesian vs traditional approaches for parameter uncertainty
+
+## Code
 
