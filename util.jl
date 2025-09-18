@@ -17,22 +17,24 @@ Parse station header with 6 parts: ID, NAME, STATE, LAT, LON, ELEVATION.
 - `name`: Station name
 - `state`: State abbreviation
 - `lat_str`: Latitude as string
-- `lon_str`: Longitude as string  
+- `lon_str`: Longitude as string
 - `elevation`: Station elevation (not used in calculations)
 - `years_of_data::Int=0`: Number of years of data available
 
 # Returns
 Named tuple with station metadata including stnid, noaa_id, name, state, latitude, longitude, years_of_data.
 """
-function parse_station_parts(station_number::Int, id, name, state, lat_str, lon_str, _elevation, years_of_data::Int=0)
+function parse_station_parts(
+    station_number::Int, id, name, state, lat_str, lon_str, _elevation, years_of_data::Int=0
+)
     return (
-        stnid = station_number,
-        noaa_id = String(strip(id)),
-        name = String(strip(name)),
-        state = String(strip(state)),
-        latitude = parse(Float64, strip(lat_str)),
-        longitude = parse(Float64, strip(lon_str)),
-        years_of_data = years_of_data
+        stnid=station_number,
+        noaa_id=String(strip(id)),
+        name=String(strip(name)),
+        state=String(strip(state)),
+        latitude=parse(Float64, strip(lat_str)),
+        longitude=parse(Float64, strip(lon_str)),
+        years_of_data=years_of_data,
     )
 end
 
@@ -56,17 +58,27 @@ Combines name and city for full station name.
 # Returns
 Named tuple with station metadata including stnid, noaa_id, name (combined with city), state, latitude, longitude, years_of_data.
 """
-function parse_station_parts(station_number::Int, id, name, city, state, lat_str, lon_str, _elevation, years_of_data::Int=0)
+function parse_station_parts(
+    station_number::Int,
+    id,
+    name,
+    city,
+    state,
+    lat_str,
+    lon_str,
+    _elevation,
+    years_of_data::Int=0,
+)
     # Combine name and city for the full name
     full_name = "$(strip(name)), $(strip(city))"
     return (
-        stnid = station_number,
-        noaa_id = String(strip(id)),
-        name = String(full_name),
-        state = String(strip(state)),
-        latitude = parse(Float64, strip(lat_str)),
-        longitude = parse(Float64, strip(lon_str)),
-        years_of_data = years_of_data
+        stnid=station_number,
+        noaa_id=String(strip(id)),
+        name=String(full_name),
+        state=String(strip(state)),
+        latitude=parse(Float64, strip(lat_str)),
+        longitude=parse(Float64, strip(lon_str)),
+        years_of_data=years_of_data,
     )
 end
 
@@ -90,7 +102,9 @@ header = "12345, Station Name, TX, 29.76, -95.37, 10"
 station = parse_station_header(header, 1, 25)
 ```
 """
-function parse_station_header(header_line::AbstractString, station_number::Int, years_of_data::Int=0)
+function parse_station_header(
+    header_line::AbstractString, station_number::Int, years_of_data::Int=0
+)
     # Split by commas and strip whitespace
     parts = [strip(p) for p in split(header_line, ",")]
 
@@ -116,7 +130,9 @@ DataFrame with columns: stnid, date, year, rainfall (with units)
 Creates complete time series from minimum to maximum year found in data,
 filling missing years with `missing` values and placeholder dates (January 1st).
 """
-function parse_rainfall_data(data_lines::Vector{<:AbstractString}, rainfall_unit, stnid::Int)
+function parse_rainfall_data(
+    data_lines::Vector{<:AbstractString}, rainfall_unit, stnid::Int
+)
     dates = Date[]
     years = Int[]
     rainfall = Float64[]
@@ -144,11 +160,8 @@ function parse_rainfall_data(data_lines::Vector{<:AbstractString}, rainfall_unit
 
     # If no data, return empty DataFrame
     if isempty(years)
-        return DataFrame(
-            stnid = Int[],
-            date = Date[],
-            year = Int[],
-            rainfall = typeof(1.0 * rainfall_unit)[]
+        return DataFrame(;
+            stnid=Int[], date=Date[], year=Int[], rainfall=typeof(1.0 * rainfall_unit)[]
         )
     end
 
@@ -160,7 +173,7 @@ function parse_rainfall_data(data_lines::Vector{<:AbstractString}, rainfall_unit
     complete_stnids = Int[]
     complete_dates = Date[]
     complete_years_vec = Int[]
-    complete_rainfall = Union{Float64, Missing}[]
+    complete_rainfall = Union{Float64,Missing}[]
 
     for yr in complete_years
         push!(complete_stnids, stnid)
@@ -178,11 +191,11 @@ function parse_rainfall_data(data_lines::Vector{<:AbstractString}, rainfall_unit
         end
     end
 
-    return DataFrame(
-        stnid = complete_stnids,
-        date = complete_dates,
-        year = complete_years_vec,
-        rainfall = complete_rainfall .* rainfall_unit
+    return DataFrame(;
+        stnid=complete_stnids,
+        date=complete_dates,
+        year=complete_years_vec,
+        rainfall=complete_rainfall .* rainfall_unit,
     )
 end
 
@@ -306,7 +319,6 @@ function test_read_noaa_data()
     end
 end
 
-
 """
     calc_distance(lon1, lat1, lon2, lat2)
 
@@ -396,44 +408,25 @@ function find_nearest_stations(target_station, all_stations, n_nearest::Int=3)
     # Calculate distances to all other stations
     distances = []
     station_indices = []
-    
+
     for (i, station) in enumerate(eachrow(all_stations))
         if station.stnid != target_station.stnid  # Exclude target station
             dist = calc_distance(
-                target_station.longitude, target_station.latitude,
-                station.longitude, station.latitude
+                target_station.longitude,
+                target_station.latitude,
+                station.longitude,
+                station.latitude,
             )
             push!(distances, dist)
             push!(station_indices, i)
         end
     end
-    
+
     # Find indices of n nearest stations
     sorted_indices = sortperm(distances)
-    nearest_indices = station_indices[sorted_indices[1:min(n_nearest, length(sorted_indices))]]
-    
+    nearest_indices = station_indices[sorted_indices[1:min(
+        n_nearest, length(sorted_indices)
+    )]]
+
     return all_stations[nearest_indices, :]
-end
-
-
-"""
-    create_return_period_range(min_period=1.1, max_period=250, n_points=100)
-
-Create a logarithmically spaced range of return periods for smooth plotting.
-
-# Arguments
-- `min_period=1.1`: Minimum return period (years)
-- `max_period=250`: Maximum return period (years)  
-- `n_points=100`: Number of points in the range
-
-# Returns
-Vector of return periods suitable for plotting smooth curves.
-
-# Example
-```julia
-T_range = create_return_period_range(2, 200, 50)
-```
-"""
-function create_return_period_range(min_period=1.1, max_period=250, n_points=100)
-    return 10 .^ range(log10(min_period), log10(max_period), length=n_points)
 end
